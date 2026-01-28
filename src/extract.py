@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 import requests
 import pandas as pd
 import numpy as np
+import os
 from time import sleep
 from datetime import datetime
 from tqdm import tqdm
@@ -19,13 +20,20 @@ chrome_options = Options()
 chrome_options.add_argument("--headless=new")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
+chrome_options.add_argument("--disable-gpu")
+chrome_options.add_argument("--disable-software-rasterizer")
+chrome_options.binary_location = "/usr/bin/chromium"
 
 # Set a proper User-Agent
 user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " \
              "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 chrome_options.add_argument(f"user-agent={user_agent}")
 
-driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+driver = webdriver.Chrome(
+    service=Service(ChromeDriverManager(driver_version="144.0.7559.59").install()),
+    options=chrome_options
+)
+
 
 # --- Open IMDb Top 250 page ---
 url = "https://www.imdb.com/chart/top/"
@@ -110,4 +118,9 @@ df_movies
 
 
 # Export dataframe df_movies to CSV
-df_movies.to_csv(r"C:\Users\asimi\Documents\Data_Engineering_Bootcamp\imdb-top250-etl\imdb_top250_movies.csv", index=False)
+#df_movies.to_csv(r"C:\Users\asimi\Documents\Data_Engineering_Bootcamp\imdb-top250-etl\imdb_top250_movies.csv", index=False)
+
+if not os.path.isfile('/app/csv/imdb_top250_movies.csv'):
+   df_movies.to_csv('/app/csv/imdb_top250_movies.csv', index= False)
+else: 
+   df_movies.to_csv('/app/csv/imdb_top250_movies.csv', mode='a', index=False, header=False)

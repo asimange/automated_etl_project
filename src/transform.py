@@ -1,10 +1,13 @@
 import pandas as pd
 import regex as re
+import os
+from sqlalchemy import create_engine
+from sqlalchemy.sql import text
 
 
 # Load the dataset
 print("First five rows of the dataset:")
-df_movies = pd.read_csv('imdb_top250_movies.csv')
+df_movies = pd.read_csv('/app/csv/imdb_top250_movies.csv')
 df_movies.head()
 
 
@@ -113,4 +116,54 @@ df_movies.isnull().sum()
 df_movies.sample(10)
 
 # Save the transformed DataFrame to a new CSV file
-df_movies.to_csv(r"C:\Users\asimi\Documents\Data_Engineering_Bootcamp\imdb-top250-etl\transformed_imdb_top250_movies.csv", index=False)
+# local path to save csv
+#df_movies.to_csv(r"C:\Users\asimi\Documents\Data_Engineering_Bootcamp\imdb-top250-etl\final_imdb_top250_movies.csv", index=False)
+
+if not os.path.isfile('/app/csv/final_imdb_top250_movies.csv'):
+   df_movies.to_csv('/app/csv/final_imdb_top250_movies.csv', index= False)
+else: 
+   df_movies.to_csv('/app/csv/final_imdb_top250_movies.csv', mode='a', index=False, header=False)
+
+# print the final dataframe
+print(df_movies)
+
+
+engine = create_engine(
+'postgresql+psycopg2:'                       
+'//asimina:'            # username for postgres       
+'1234'                 # password for postgres  
+'@postgres-db:5432/'     # postgres container's name and the exposed port                
+'postgres')
+
+con = engine.connect()
+
+# create an empty table imdb_top250_movies 
+sql = """
+  create table if not exists imdb_top250_movies (
+  Ranking int,
+  Movie_Title VARCHAR(150),
+  Realese_Year int,
+  MPA_Rating VARCHAR(50),
+  Director VARCHAR(150),
+  Star_Actors VARCHAR(150),
+  Characteristics VARCHAR(500),
+  language VARCHAR(150),
+  duration_minutes int,
+  imdb_rating VARCHAR(50),
+  imdb_num_of_votes VARCHAR(50),
+  wins_count int,
+  nominations int
+);
+"""
+# execute the 'sql' query
+with engine.connect().execution_options(autocommit=True) as conn:
+    query = conn.execute(text(sql))
+
+# insert the dataframe data to 'imdb_top250_movies' SQL table
+with engine.connect().execution_options(autocommit=True) as conn:
+    df_movies.to_sql('imdb_top250_movies', con=conn, if_exists='append', index= False)
+
+#optional
+print(pd.read_sql_query("""
+select * from imdb_top250_movies
+""", con))

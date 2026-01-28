@@ -1,0 +1,43 @@
+version: '3'
+services:
+  postgresdb:
+    image: postgres
+    container_name: postgres-db
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: asimina
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: postgres
+    volumes:
+      - pgadmin:/var/lib/postgresql
+
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgAdmin
+    ports:
+      - 8080:80
+    environment:
+      PGADMIN_DEFAULT_EMAIL: user@asimina.com
+      PGADMIN_DEFAULT_PASSWORD: SuperSecret
+    depends_on:
+      - postgresdb
+
+
+  webscraper:
+    build: .
+    container_name: my_webscraper
+    depends_on:
+      - postgresdb
+    volumes:
+      - ./csv:/app/csv
+    environment:
+      POSTGRES_USER: asimina
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: imdb_top250_movies
+      POSTGRES_HOST: postgresdb
+
+
+volumes:
+  pgadmin:
